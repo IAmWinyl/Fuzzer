@@ -5,7 +5,9 @@
 typedef int                 BOOL;
 typedef unsigned char       BYTE;
 typedef unsigned short      WORD;
-typedef unsigned long       DWORD;
+// VULN: changed to int 
+typedef int 					DWORD;
+//typedef unsigned long       DWORD;
 
 #define FALSE               0
 #define TRUE                1
@@ -20,7 +22,12 @@ int   JPGtoPDF(const char *OpenName,const char *SaveName);
 
 int main(int argc,char *argv[])
 {
+	// String format vulnerabilitiy 
+	char temp[20]; 	
+	
    if (argc >= 2)
+	 strcpy(temp, argv[1]);
+	 printf(temp);
      return (JPGtoPDF(argv[1],"jpg2pdf.pdf"));
    else
    {

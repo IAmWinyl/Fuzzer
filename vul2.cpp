@@ -139,9 +139,11 @@ BOOL GetJPEGSize(FILE *JPGStream,WORD *AWidth,WORD *AHeight,BOOL *CMYK)
      /* Skip Segment */  
      if (fread(&wrk,2,1,JPGStream)<1) 
        return FALSE;
-     
+   
+   // if too short, invalid memory access
+     /*
      if (fseek(JPGStream,ftell(JPGStream)+SwapEndian(wrk)-2,SEEK_SET )) 
-       return FALSE;
+       return FALSE;*/
  }
 }
 

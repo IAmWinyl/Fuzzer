@@ -38,7 +38,7 @@ int main(int argc,char *argv[])
      return (JPGtoPDF(argv[1],"jpg2pdf.pdf"));
    }
    else if (argc == 3) {
-    
+
     // VULN 3: Writing to a read-only section of program
 
      *pdfName = argv[2];
@@ -69,14 +69,15 @@ DWORD GetFileSize(FILE *fp)
 
 BOOL CopyStream(FILE *Src,FILE *Dest)
 {
- BYTE  *buffer;
+  // VULN 7: buffer overflow on copystream, not sure how this will be fuzzed
+ BYTE  buffer[500];
  int   Pos;
  DWORD FileSize;
  Pos =ftell(Src);
 
  FileSize= GetFileSize(Src);
 
- buffer=(BYTE *)malloc(FileSize);
+ //buffer=(BYTE *)malloc(FileSize);
  if (buffer==NULL) 
    return FALSE;
  fseek(Src,0,SEEK_SET);

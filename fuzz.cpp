@@ -10,7 +10,8 @@ using namespace std;
 // Function prototype
 void fuzz(vector <unsigned char> *arr);
 void print_to_file(vector <unsigned char> arr, string jfName);
-int run(string ffName, string jfName);
+int run(string jfName);
+
 
 // Global variables
 string fuzzFileName;
@@ -18,16 +19,29 @@ string fuzzFileName;
 int main(int argc, char* argv[]) {
 
 	vector <unsigned char> fileArray;
-	int arrLength = 0, retVal = 0;
 
 	// Check arguments
 	if(argc > 1) {
-		fuzzFileName = (string) argv[1];
+		fuzzFileName = argv[1];
+		// Check if file exists
+		FILE *file = fopen(argv[1], "r");
+
+		if(!file) {
+			cout << "File does not exist." << endl;
+			return 0;
+		}
+		else {
+			fclose(file);
+		}
+
 	}
 	else {
 		cout << "Usage: ./fuzz <filename>" << endl;
 		exit(-1);
 	}
+
+	// Initialize the first 256 spaces of vector with zeros
+	fileArray.assign(256,0);
 
 	// Start fuzzing
 	fuzz(&fileArray);
@@ -36,38 +50,86 @@ int main(int argc, char* argv[]) {
 }
 
 void fuzz(vector <unsigned char> *arr) {
-	unsigned char hex;
+	char hexVal[16] = { };
 	int retVal = 0;
-	string jfName;
 	int jfNameCount = 0;
-
+	int i, j, k;
 
 	// Loop through the 256 hex values
 	for(int i = 0; i < 256; i++) {
-
-		// Push value to array
-		arr->push_back( (unsigned char) itoa(i,hex,16) );
+		// Push new value to array
+		arr->at(arr->end()) = i;
 
 		// Print value to file
-		print_to_file(*arr, jfName);
+		print_to_file(*arr, to_string(jfNameCount) + ".jpg");
 
 		// Run file, check whether system code is SIGSEV
-		if(run() == 11) {
-			// Save file
+		if(run(to_string(jfNameCount) + ".jpg") == 11) {
 			// Increment file name
+			cout << "[*] Segmentation fault detected." << endl;
 			jfNameCount++;
-		}
-		else {
-			// Delete file
-		}
 
-
+		}
 	}
 
 
-	// SIGSEV return code is 11
-	if(retVal == 11) {
-		printf("[*] Segmentation fault detected: %s", to_string(jpgFileName) + ".jpg");
+	// Loop through all of array
+	for(k = arr->end()-1; k > -1; k--) {
+
+		// Reset values to zero from current position to end
+		arr->assign(k,arr->end(),0);
+
+		// Increment value of current position
+		arr->at(k) += 1;
+
+		// Assign j to second to last position
+		j = arr->end();
+
+		// Loop starting from end towards current position
+		while(j > k) {
+
+			// Reset j to the end position
+			j = arr->end();
+
+			// Loop through the 256 hex values
+			for(i = 0; i < 256; i++) {
+
+				// Push new value to array
+				arr->at(arr->end()) = i;
+
+				// Print value to file
+				print_to_file(*arr, to_string(jfNameCount) + ".jpg");
+
+				// Run file, check whether system code is SIGSEV
+				if(run(to_string(jfNameCount) + ".jpg") == 11) {
+					// Increment file name
+					cout << "[*] Segmentation fault detected." << endl;
+					jfNameCount++;
+
+				}
+			}
+
+			j--;
+
+			// If no overflow
+			if(arr->at(j) != 255) {
+				// Increment value of position j
+				arr->at(j)++;
+			}
+			else {
+				// While values are at overflow
+				while(arr->at(j) == 255) {
+					// Move position down
+					j--;
+				}
+				// if current position isn't reached
+				if(j > k) {
+					// Increment value and zero the rest
+					arr->at(j)++;
+					arr->assign(j+1, arr->end(),0);
+				}
+			}
+		}
 	}
 }
 
@@ -80,7 +142,7 @@ void print_to_file(vector <unsigned char> arr, string jfName) {
 
 	// Loop array elements
 	for(int i = 0 ; i < arrLength; i++) {
-		file << arr[i];
+		file << static_cast<unsigned char>(arr[i]);
 	}
 
 	file.close();
@@ -88,7 +150,7 @@ void print_to_file(vector <unsigned char> arr, string jfName) {
 }
 
 int run(string jfName) {
-	string command = "./" + fuzzFileName + " " + jfName;
+	string command = "./" + fuzzFileName + " " + jfName + "> /dev/null 2>&1";
 	return system(command.c_str());
 }
 

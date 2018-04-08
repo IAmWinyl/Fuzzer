@@ -22,7 +22,6 @@ public class Fuzzer {
      public File mutate(File in, int start, int length) throws IOException  
      {
          //System.out.println("inp.length= "+ ((int) in.length())+" name= "+in.getName());
-         //imglength = (int) in.length();
          byte[] data = new byte[(int) in.length()];
          DataInputStream din = new DataInputStream(new FileInputStream(in));
          din.readFully(data);
@@ -61,12 +60,10 @@ public class Fuzzer {
         byte[] dest = new byte[in.length + fuzz.length + fuzz.length + fuzz.length];
         random.nextBytes(fuzz);
         int l = in.length - 1 + fuzz.length;
-       // int m = in.length - 1 + fuzz.length + fuzz.length;
+ 
         System.arraycopy(in, 0, dest, 0, in.length);
         System.arraycopy(fuzz, 0, dest, in.length-1, fuzz.length);
         //System.arraycopy(fuzz, 0, dest, l-1, fuzz.length);
-        //System.arraycopy(fuzz, 0, dest, m-1, fuzz.length);
-
         return dest;
      }
      //run target program with mutated image
@@ -80,7 +77,7 @@ public class Fuzzer {
        
         try {
             p = rt.exec(converterAndmutimage);
-            //System.out.println("Done start!");
+            
             BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 			BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
             while (in.read(buffer) != -1)
@@ -96,12 +93,10 @@ public class Fuzzer {
             
             //seg fault = 139. exit code==139 break from while loop
             if((excode != (-1)) && (excode != (0)) ){
-            // if(excode==128+11){ 
-                System.out.println("~~s index: "+excode);//+s.indexOf("BUG"));
-                //testFile.delete();
+                System.out.println("~~Crashed: ");
             }
             else{
-                System.out.println("The exitcode: "+excode+" deleting: "+testFile.getName());
+                System.out.println("Did not crash- " + "deleting: " + testFile.getName());
                 testFile.delete();
             }
         }catch(Exception ex) {

@@ -134,7 +134,7 @@ public class Fuzzer {
             hw.muteFile = hw.mutate(inp, start, len);
             System.out.println(i+ " Shown: "+ hw.muteFile + "start & len:"+start+" & "+len);
             hw.executeTarget(hw.muteFile);
-            if(hw.excode==139) break;
+            //if(hw.excode==139) break;
           }
        }catch(IOException e){
          e.printStackTrace();

@@ -120,7 +120,7 @@ public class Fuzzer {
        
        File inp= new File(filename);
        hw.imglength = (int) inp.length();
-       System.out.println("The file name: "+ inp.getName()+" "+hw.imglength);
+       //System.out.println("The file name: "+ inp.getName()+" "+hw.imglength);
        
        int ret,i=0;
        try{

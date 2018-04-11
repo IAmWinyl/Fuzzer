@@ -1,0 +1,9 @@
+Fuzzer Project deliverables
+
+Submit a .zip file through UCF Canvas. The zip file should contain:
+1. Source code file of your fuzzer. You can include multiple fuzzer codes where each of them is used to discover 
+   one or several specific bugs. 
+2. The input files (modified jpg images based on the sample.jpg) that could trigger each of the bugs you can find. 
+   For each bug, just provide one input image file. Name the input file as “test-x.jpg” for Bug # x. 
+   In this way, I can easily check whether you really found Bug #x by running it by myself! 
+3. A 3-5 page project report (in PDF). 

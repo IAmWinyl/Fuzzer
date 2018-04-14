@@ -33,6 +33,7 @@ using namespace std;
 
 */
 
+void fuzz();
 void initialize_header(vector <unsigned char> *arr);
 void print_to_file(vector <unsigned char> arr, string jfName);
 int run(string ffName, string jfName);
@@ -108,6 +109,10 @@ void initialize_header(vector <unsigned char> *arr) {
 	arr->push_back( (unsigned char) 0xFF ); //file.Trailer[0]
 	arr->push_back( (unsigned char) 0xD9 ); //file.Trailer[1]
 
+}
+
+void fuzz(vector <unsigned char> *arr) {
+	grow();
 }
 
 void print_to_file(vector <unsigned char> arr, string jfName) {

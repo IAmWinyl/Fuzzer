@@ -1,17 +1,16 @@
+/*
+VULN 1: In GetJPEGSize, Sampling is not allocated if the file format is not correct and height is not found.
+fread tries to use a null pointer if height is not found. 
+*/
+
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 
 typedef int                 BOOL;
 typedef unsigned char       BYTE;
-
-// VULN 4: negative word
-
-typedef short      WORD;
-
-// VULN 1: changed to int, file can overflow
-
-typedef /*unsigned long*/ int       DWORD;
+typedef unsigned short      WORD;
+typedef unsigned long       DWORD;
 
 #define FALSE               0
 #define TRUE                1
@@ -26,23 +25,8 @@ int   JPGtoPDF(const char *OpenName,const char *SaveName);
 
 int main(int argc,char *argv[])
 {
-   char fileName[15];
-   char *pdfName = "NULL";
-
-   if (argc == 2) {
-
-    // VULN 2: If argument is too long, buffer overflow
-
-     strcpy(fileName, argv[1]);
-     printf("Converting %s to a PDF...", fileName);
+   if (argc >= 2)
      return (JPGtoPDF(argv[1],"jpg2pdf.pdf"));
-   }
-   else if (argc == 3) {
-
-    // VULN 3: Writing to a read-only section of program
-
-     pdfName = argv[2];
-   }
    else
    {
      printf("Not Found!\n");
@@ -69,15 +53,14 @@ DWORD GetFileSize(FILE *fp)
 
 BOOL CopyStream(FILE *Src,FILE *Dest)
 {
-  // VULN 7: buffer overflow on copystream, not sure how this will be fuzzed
- BYTE  buffer[500];
+ BYTE  *buffer;
  int   Pos;
  DWORD FileSize;
+
  Pos =ftell(Src);
+ FileSize=GetFileSize(Src);
 
- FileSize= GetFileSize(Src);
-
- //buffer=(BYTE *)malloc(FileSize);
+ buffer=(BYTE *)malloc(FileSize);
  if (buffer==NULL) 
    return FALSE;
  fseek(Src,0,SEEK_SET);
@@ -92,7 +75,8 @@ BOOL CopyStream(FILE *Src,FILE *Dest)
 BOOL GetJPEGSize(FILE *JPGStream,WORD *AWidth,WORD *AHeight,BOOL *CMYK)
 {
  WORD wrk;
- BYTE Sampling;
+ // Sampling is not initiazed 
+ BYTE* Sampling = NULL;
 
  WORD SOF0 =0xFFC0; /* Normal */
  WORD SOF2 =0xFFC2; /* Progressive */
@@ -106,60 +90,63 @@ BOOL GetJPEGSize(FILE *JPGStream,WORD *AWidth,WORD *AHeight,BOOL *CMYK)
 
  while (1)
  {
-     if (fread(&wrk,2,1,JPGStream)<1) 
-       return FALSE;
+    // VULN 1: Doesn't return false on fseeks
+     fread(&wrk,2,1,JPGStream);
      wrk=SwapEndian(wrk);
      
      /* JPEG Maker */
      if ((wrk==SOF0) | (wrk==SOF2))
      {  
         /* Skip Segment Length  */
-        if (fseek(JPGStream,ftell(JPGStream)+2,SEEK_SET)) 
-         return FALSE;
+        fseek(JPGStream,ftell(JPGStream)+2,SEEK_SET);
+          
+         //return FALSE;
 
         /* Skip Sample */
-        if (fseek(JPGStream,ftell(JPGStream)+1,SEEK_SET)) 
-         return FALSE;
+        fseek(JPGStream,ftell(JPGStream)+1,SEEK_SET);
+          
+         //return FALSE;
 
         /* Height */
-        if (fread(&wrk,2,1,JPGStream)<1) 
-          return FALSE;
+        if(fread(&wrk,2,1,JPGStream)){
+          // if true, allocate Sampling
+          Sampling = (unsigned char*) malloc(sizeof(unsigned char));
+
+        }
         *AHeight=SwapEndian(wrk);
-        // VULN 4: Negative height causes infinite loop in creating cross-ref table
 
         /* Width */          
-        if (fread(&wrk,2,1,JPGStream)<1) 
-         return FALSE;
+        fread(&wrk,2,1,JPGStream); 
+          
+         //return FALSE;
         *AWidth=SwapEndian(wrk);
         
         /* ColorMode */
-        if (fread(&Sampling,1,1,JPGStream)<1) 
-          return FALSE;
+        fread(Sampling,1,1,JPGStream);
+          
+          //return FALSE;
         
-        switch (Sampling)
+        switch (*Sampling)
         {
           case 3  : *CMYK = FALSE; break; /* RGB  */
           case 4  : *CMYK = TRUE ; break; /* CMYK */
-          default : return FALSE;         /* ???  */ 
+          //default : return FALSE;         /* ???  */
+          default:  return FALSE;
         }
 
         return TRUE; 
      }
      else if ((wrk==0xFFFF) | (wrk==0xFFD9))
      {
-         return FALSE;  
+        return FALSE;  
      }
 
      /* Skip Segment */  
-     if (fread(&wrk,2,1,JPGStream)<1) 
-       return FALSE;
-     
-     if (fseek(JPGStream,ftell(JPGStream)+SwapEndian(wrk)-2,SEEK_SET )) {
-
-       // VULN 5: if file is too short, invalid memory access
-
+     fread(&wrk,2,1,JPGStream);
        //return FALSE;
-     }
+     
+     fseek(JPGStream,ftell(JPGStream)+SwapEndian(wrk)-2,SEEK_SET );
+       //return FALSE;
  }
 }
 
@@ -170,7 +157,6 @@ void Write_CrossReferenceTable(FILE *AStream,DWORD ObjectPosArray[],int Count)
    fprintf(AStream,"xref\n");
    fprintf(AStream,"0 %d\n",Count+1);
    fprintf(AStream,"0000000000 65535 f \n");
-
 
    for (i= 0; i<=Count-1;i++)
       fprintf(AStream,"%0.10d 00000 n \n",ObjectPosArray[i]);
@@ -218,16 +204,11 @@ int JPGtoPDF(const char *OpenName,const char *SaveName)
 
     /* Open Jpeg File */
     JPGStream=fopen(OpenName,"rb");
-
-    // VULN 6: Null pointer if file does not exist
-
-    /*
     if(JPGStream==NULL)
     {
        printf("Error : Can not Open File.\n");
        return(-1);  
     }
-    */
 
     /* Get JPEG size */
     if (GetJPEGSize(JPGStream,&w,&h,&cmyk)==FALSE)

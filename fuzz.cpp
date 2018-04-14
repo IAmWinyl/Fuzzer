@@ -58,7 +58,7 @@ void fuzz(vector <unsigned char> *arr) {
 	// Loop through the 256 hex values
 	for(int i = 0; i < 256; i++) {
 		// Push new value to array
-		arr->at(arr->end()) = i;
+		arr->back() = i;
 
 		// Print value to file
 		print_to_file(*arr, to_string(jfNameCount) + ".jpg");
@@ -74,28 +74,28 @@ void fuzz(vector <unsigned char> *arr) {
 
 
 	// Loop through all of array
-	for(k = arr->end()-1; k > -1; k--) {
+	for(k = distance( arr->begin(), arr->end() )-1; k > -1; k--) {
 
-		// Reset values to zero from current position to end
-		arr->assign(k,arr->end(),0);
+		// Reset values to zero
+		fill(arr->begin(), arr->end(), 0);
 
 		// Increment value of current position
 		arr->at(k) += 1;
 
 		// Assign j to second to last position
-		j = arr->end();
+		j = distance( arr->begin(), arr->end() );
 
 		// Loop starting from end towards current position
 		while(j > k) {
 
 			// Reset j to the end position
-			j = arr->end();
+			j = distance( arr->begin(), arr->end() );
 
 			// Loop through the 256 hex values
 			for(i = 0; i < 256; i++) {
 
 				// Push new value to array
-				arr->at(arr->end()) = i;
+				arr->back() = i;
 
 				// Print value to file
 				print_to_file(*arr, to_string(jfNameCount) + ".jpg");
@@ -125,8 +125,8 @@ void fuzz(vector <unsigned char> *arr) {
 				// if current position isn't reached
 				if(j > k) {
 					// Increment value and zero the rest
+					fill(arr->begin(), arr->end(), 0);
 					arr->at(j)++;
-					arr->assign(j+1, arr->end(),0);
 				}
 			}
 		}

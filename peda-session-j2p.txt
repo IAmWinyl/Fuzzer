@@ -1,0 +1,3 @@
+break /mnt/hgfs/Projects/Fuzzer/jpg2pdf.cpp:100
+break /mnt/hgfs/Projects/Fuzzer/jpg2pdf.cpp:92
+

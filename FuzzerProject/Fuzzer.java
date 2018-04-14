@@ -92,6 +92,54 @@ public class Fuzzer {
         return dest;
      }
 
+     public File shrinkFile(File in) throws IOException {
+        
+        // Allocate byte array for image
+        byte[] data = new byte[(int) in.length()];
+
+        // Fill array with image data
+        DataInputStream din = new DataInputStream(new FileInputStream(in));
+        din.readFully(data);
+
+        // Assign position to end of array
+        int pos = data.length - 1;
+        byte[] newFile;
+
+        // Find FFC0 or FFC2
+        while(pos != 1) {
+            // Find C0 or C2
+            if(data[pos] == -64 || data[pos] == -62){    
+                // Find FF
+                if(data[pos-1] == -1) {  
+                    break;
+                }
+            }
+            // If not found, move position down the array
+            pos--;
+        }
+
+        // Allocate new file
+        newFile = new byte[pos+1];
+
+        // Fill new file with old file's content up to FFC0 or FFC2
+        System.arraycopy(data, 0, newFile, 0, pos+1);
+
+        // Output image to file
+        String name = "fuzz_" + count + "_" + in.getName();
+        File fout = new File(name);
+        FileOutputStream  out = new FileOutputStream(fout);
+        out.write(newFile);
+
+        out.close();
+        din.close();
+
+        // Increase file name count
+        count++;
+
+        return fout;
+     }
+
+
      // Run target program with mutated image
      public void executeTarget(File testFile){
         char[] buffer = new char[1024];
@@ -123,7 +171,7 @@ public class Fuzzer {
             }
             else{
                 System.out.println("Did not crash- deleting: " + testFile.getName());
-                testFile.delete();
+                //testFile.delete();
             }
         } catch(Exception ex) {
             ex.printStackTrace();
@@ -147,20 +195,25 @@ public class Fuzzer {
        // Get image length
        hw.imglength = (int) inp.length();
        System.out.println("The file name: " + inp.getName() + " " + hw.imglength);
+        
+        try {
+            
+            hw.executeTarget(hw.shrinkFile(inp));
 
-       try {
-         while (i<3) {
-            i++;
-            int start = hw.rand.nextInt(50) + 1; //max=10, min=1
-            int len = hw.rand.nextInt(1050) + 1;
-            int range = start + len;
-            if(range > hw.imglength) continue;
+            while (i<3) {
+                i++;
 
-            hw.muteFile = hw.mutate(inp, start, len);
-            //System.out.println(i+ " Shown: "+ hw.muteFile + "start & len:"+start+" & "+len);
-            hw.executeTarget(hw.muteFile);
-            //if(hw.excode==139) break;
-          }
+                int start = hw.rand.nextInt(50) + 1; //max=10, min=1
+                int len = hw.rand.nextInt(1050) + 1;
+                int range = start + len;
+
+                if(range > hw.imglength) continue;
+
+                hw.muteFile = hw.mutate(inp, start, len);
+                hw.executeTarget(hw.muteFile);
+            }
+            
+
        } catch(IOException e) {
          e.printStackTrace();
          System.out.println("Nothing..:] not mutated");

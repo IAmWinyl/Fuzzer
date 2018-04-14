@@ -1,0 +1,2 @@
+break /mnt/hgfs/Projects/Fuzzer/FuzzerProject/vbug1.cpp:100
+

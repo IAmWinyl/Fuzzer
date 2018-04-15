@@ -3,7 +3,8 @@ Fuzzer Project deliverables
 1. Source code - Fuzzer.java
 2. Modified jpg images in mutatedimages folder. The modified jpg images are saved with the image name and the bug number.
 3. Screenshot images of each bug triggered
-4. Project report
+4. jpg2pdf.cpp with added vulnerabilities saved as vbug1.cpp to vbug10.cpp
+5. Project report
 
 Submit a .zip file through UCF Canvas. The zip file should contain:
 1. Source code file of your fuzzer. You can include multiple fuzzer codes where each of them is used to discover one or several specific bugs. 
